@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/hurricanerix/http-helper/build"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -27,12 +29,35 @@ const defaultCORSAllowedOrigins = "*"
 const defaultCORSAllowedMethods = "HEAD,GET"
 const defaultCORSAllowCredentials = true
 
+var base64SourceDiff string
+
 func main() {
 	address := flag.String("bind", "127.0.0.1", "bind to this address")
 	port := flag.Int("port", 8000, "bind to this port")
-	directory := flag.String("directory", ".", "serve this directory")
+	directory := flag.String("d", ".", "serve this directory")
+	showDiff := flag.Bool("diff", false, "display the changes made at compile time, suitable for patching.")
+
+	flag.Usage = func() {
+		fmt.Printf("Usage: %s [FLAGS]\n", os.Args[0])
+		fmt.Println("")
+		fmt.Println("Build Info:")
+		fmt.Println("  Built with:", build.GoVersion())
+		fmt.Println("  Commit Hash:", build.CommitHash())
+		fmt.Println("  Commit Date:", build.CommitDate())
+		if build.SourceModified() {
+			fmt.Printf(" (modified)")
+		}
+		fmt.Println("")
+		fmt.Println("Flags:")
+		flag.PrintDefaults()
+	}
 
 	flag.Parse()
+
+	if *showDiff {
+		fmt.Println(build.SourceDiff())
+		return
+	}
 
 	directoryAbsolutePath, err := filepath.Abs(*directory)
 	if err != nil {

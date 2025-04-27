@@ -2,6 +2,13 @@
 
 A simple HTTP server for development and testing, similar to `python -m http.server` with a few more features.
 
+## Running from docker
+
+```shell
+$ docker build -t http-helper/hs .
+$ docker run -p 8000:8000 -v ./testdata:/data http-helper/hs
+```
+
 ## License
 
 Unless otherwise noted, all source code in this repo falls under a [MIT License](LICENSE).
