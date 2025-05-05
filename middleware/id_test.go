@@ -23,7 +23,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 		t.Errorf("expected err to be nil got %v", err)
 	}
 
-	want := "52fdfc07-2182-454f-963f-5f0f9a621d72"
+	want := "52fdfc072182454f963f5f0f9a621d72"
 	id := res.Header.Get("X-Request-Id")
 	if id != want {
 		t.Errorf("want %v, got %v", want, id)

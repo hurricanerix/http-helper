@@ -3,33 +3,32 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/hurricanerix/http-helper/build"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/hurricanerix/http-helper/build"
 	"github.com/hurricanerix/http-helper/config"
-	"github.com/hurricanerix/http-helper/handler"
 	"github.com/hurricanerix/http-helper/middleware"
+	"github.com/hurricanerix/http-helper/platforms/python"
+	"github.com/hurricanerix/http-helper/platforms/s3"
 	"github.com/joho/godotenv"
-	"github.com/rs/cors"
 )
 
 func init() {
-	godotenv.Load()
+	loadEnv()
 }
+
+const defaultServerPipeline = "logger, error, request_id, bandwidth, ttfb, cors, mime, etag"
+const defaultServerHandler = "python"
 
 const defaultServerIdleTimeout = 5 * time.Second
 const defaultServerReadTimeout = 5 * time.Second
 const defaultServerWriteTimeout = 5 * time.Second
-
-const defaultCORSAllowedOrigins = "*"
-const defaultCORSAllowedMethods = "HEAD,GET"
-const defaultCORSAllowCredentials = true
-
-var base64SourceDiff string
 
 func main() {
 	address := flag.String("bind", "127.0.0.1", "bind to this address")
@@ -42,11 +41,13 @@ func main() {
 		fmt.Println("")
 		fmt.Println("Build Info:")
 		fmt.Println("  Built with:", build.GoVersion())
-		fmt.Println("  Commit Hash:", build.CommitHash())
-		fmt.Println("  Commit Date:", build.CommitDate())
+		fmt.Printf("  Commit Hash: %s", build.CommitHash())
 		if build.SourceModified() {
 			fmt.Printf(" (modified)")
 		}
+		fmt.Println("")
+		fmt.Println("  Commit Date:", build.CommitDate())
+
 		fmt.Println("")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
@@ -64,28 +65,11 @@ func main() {
 		panic(err)
 	}
 
-	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   config.StringSliceEnv("HH_CORS_ALLOWED_ORIGINS", defaultCORSAllowedOrigins),
-		AllowedMethods:   config.StringSliceEnv("HH_CORS_ALLOWED_METHOD", defaultCORSAllowedMethods),
-		AllowCredentials: config.BoolEnv("HH_CORS_ALLOW_CREDENTIALS", defaultCORSAllowCredentials),
-	})
-
-	p := pipeline{
-		middleware.Logger,
-		middleware.Error,
-		middleware.RequestID,
-		middleware.Bandwidth,
-		middleware.TTFB,
-		corsMiddleware.Handler,
-		middleware.Mime,
-		middleware.ETag,
-	}
-
+	p := getPipeline(config.StringEnv("HH_SERVER_PIPELINE", defaultServerPipeline))
+	h := getHandler(config.StringEnv("HH_SERVER_HANDLER", defaultServerHandler), directoryAbsolutePath)
 	s := &http.Server{
-		Addr: fmt.Sprintf("%s:%d", *address, *port),
-		Handler: wrap(handler.File{
-			Directory: directoryAbsolutePath,
-		}, p),
+		Addr:         fmt.Sprintf("%s:%d", *address, *port),
+		Handler:      wrap(h, p),
 		IdleTimeout:  config.DurationEnv("HH_SERVER_IDLE_TIMEOUT", defaultServerIdleTimeout),
 		ReadTimeout:  config.DurationEnv("HH_SERVER_READ_TIMEOUT", defaultServerReadTimeout),
 		WriteTimeout: config.DurationEnv("HH_SERVER_WRITE_TIMEOUT", defaultServerWriteTimeout),
@@ -95,11 +79,82 @@ func main() {
 	log.Fatal(s.ListenAndServe())
 }
 
-type pipeline []func(h http.Handler) http.Handler
+type pipeline []stage
+type stage func(h http.Handler) http.Handler
 
 func wrap(h http.Handler, p pipeline) http.Handler {
 	for i := len(p) - 1; i != -1; i-- {
 		h = p[i](h)
 	}
 	return h
+}
+
+func getHandler(name string, dir string) http.Handler {
+	switch name {
+	case "s3":
+		return s3.Handler{
+			Directory: dir,
+		}
+	case "python":
+		fallthrough
+	default:
+		return python.Handler{
+			Directory: dir,
+		}
+	}
+}
+
+func getPipeline(rawPipeline string) pipeline {
+	stageNames := strings.Split(strings.ReplaceAll(rawPipeline, " ", ""), ",")
+
+	p := make([]stage, len(stageNames))
+	for i := range stageNames {
+		p[i] = getStage(stageNames[i])
+	}
+
+	return p
+}
+
+func getStage(stageName string) stage {
+	switch stageName {
+	case "logger":
+		return middleware.Logger
+	case "error":
+		return middleware.Error
+	case "request_id":
+		return middleware.RequestID
+	case "bandwidth":
+		return middleware.Bandwidth
+	case "ttfb":
+		return middleware.TTFB
+	case "cors":
+		return middleware.CORS
+	case "mime":
+		return middleware.Mime
+	case "etag":
+		return middleware.ETag
+	case "python.logger":
+		return python.Logger
+	}
+
+	return middleware.NOP
+}
+
+func loadEnv() {
+	// TODO: 1. Try loading from: ./.env
+	// TODO: 2. if #1 does not exist, try loading from ~/.config/http_helper.env
+	// TODO: 3. if #2 does not exist, load using app defaults.
+	if err := godotenv.Load(".env"); err == nil {
+		return
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	globalConfig := path.Join(homeDir, ".config/http_helper.env")
+	if err := godotenv.Load(globalConfig); err == nil {
+		return
+	}
 }

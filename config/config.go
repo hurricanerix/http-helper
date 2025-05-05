@@ -1,3 +1,9 @@
+/*
+Package config provides functions for reading config values
+from the environment.  These functions are designed to not
+fail.  If an env variable is not set, or parsing fails, the
+provided default value is used.
+*/
 package config
 
 import (

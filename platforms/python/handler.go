@@ -1,4 +1,4 @@
-package handler
+package python
 
 import (
 	"bytes"
@@ -37,11 +37,11 @@ func init() {
 	}
 }
 
-type File struct {
+type Handler struct {
 	Directory string
 }
 
-func (h File) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	io.ReadAll(r.Body)
 
 	p := strings.TrimRight(r.URL.Path, "/")
@@ -63,10 +63,11 @@ func (h File) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Add("Server", "SimpleHTTP/0.6 Python/3.12.3")
 	h.serveFile(target, w, r)
 }
 
-func (h File) serveFile(target string, w http.ResponseWriter, r *http.Request) {
+func (h Handler) serveFile(target string, w http.ResponseWriter, r *http.Request) {
 	f, err := os.Open(target)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -83,7 +84,7 @@ type ListingTemplateData struct {
 	Files map[string]string
 }
 
-func (h File) serveListing(target string, w http.ResponseWriter, r *http.Request) {
+func (h Handler) serveListing(target string, w http.ResponseWriter, r *http.Request) {
 	entries, err := os.ReadDir(target)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -112,3 +113,66 @@ func (h File) serveListing(target string, w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 	w.Write(payload.Bytes())
 }
+
+/*
+< HTTP/1.0 200 OK
+< Server: SimpleHTTP/0.6 Python/3.12.3
+< Date: Fri, 02 May 2025 17:46:37 GMT
+< Content-type: text/html; charset=utf-8
+< Content-Length: 322
+<
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Directory listing for /</title>
+</head>
+<body>
+<h1>Directory listing for /</h1>
+<hr>
+<ul>
+<li><a href="hello.go">hello.go</a></li>
+<li><a href="images/">images/</a></li>
+<li><a href="WaterBottle.glb">WaterBottle.glb</a></li>
+</ul>
+<hr>
+</body>
+</html>
+* Closing connection
+*/
+
+/*
+< HTTP/1.0 200 OK
+< Server: SimpleHTTP/0.6 Python/3.12.3
+< Date: Fri, 02 May 2025 17:47:48 GMT
+< Content-type: application/octet-stream
+< Content-Length: 74
+< Last-Modified: Sun, 13 Apr 2025 02:05:23 GMT
+<
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, 世界")
+}
+* Closing connection
+*/
+
+/*
+$ curl -d -XDELETE localhost:8000/hello.go
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Error response</title>
+    </head>
+    <body>
+        <h1>Error response</h1>
+        <p>Error code: 501</p>
+        <p>Message: Unsupported method ('POST').</p>
+        <p>Error code explanation: 501 - Server does not support this operation.</p>
+    </body>
+</html>
+
+*/

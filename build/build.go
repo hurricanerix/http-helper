@@ -1,3 +1,7 @@
+/*
+Package build is responsible for returning metadata about
+the built executable at runtime.
+*/
 package build
 
 import (

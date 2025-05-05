@@ -1,7 +1,5 @@
 .PHONY: default run build release mkdirs clean 
-
-OS=`uname | tr '[:upper:]' '[:lower:]'`
-ARCH=`arch`
+PLATFORM=$(shell sh -c "go version | awk '{print \$$4}' | tr '/' '-'")
 CMD=hs
 PACKAGE=github.com/hurricanerix/http-helper
 BUILD_DIR=bin
@@ -12,6 +10,10 @@ BASE64_SOURCE_DIFF=$(shell git --no-pager diff | base64 -w0)
 
 .PHONY: default
 default: build
+
+.PHONY: run
+run: build
+	./bin/$(PLATFORM)/hs -d testdata
 
 .PHONY: setup
 setup:
@@ -24,11 +26,23 @@ lint:
 
 .PHONY: test
 test:
+	go test ./...
 
+.PHONY: bench
+bench:
+	@echo "Not implemented yet"
 
+.PHONY: fuzz
+fuzz:
+	@echo "Not implemented yet"
 
 .PHONY: build
-build: $(BUILD_DIR) $(BUILD_DIR)/darwin-arm64/$(CMD) $(BUILD_DIR)/darwin-amd64/$(CMD) $(BUILD_DIR)/windows-amd64/$(CMD).exe $(BUILD_DIR)/linux-amd64/$(CMD)
+build: $(BUILD_DIR) $(BUILD_DIR)/$(PLATFORM)/$(CMD)
+	echo $(PLATFORM)
+
+.PHONY: build-all
+build-all: $(BUILD_DIR) $(BUILD_DIR)/darwin-arm64/$(CMD) $(BUILD_DIR)/darwin-amd64/$(CMD) $(BUILD_DIR)/windows-amd64/$(CMD).exe $(BUILD_DIR)/linux-amd64/$(CMD)
+
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -45,6 +59,9 @@ $(BUILD_DIR)/windows-amd64:
 $(BUILD_DIR)/linux-amd64:
 	mkdir -p $(BUILD_DIR)/linux-amd64
 
+$(BUILD_DIR)/linux-amd64/$(CMD): $(BUILD_DIR)/linux-amd64 $(SRC)
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X $(PACKAGE)/build.base64SourceDiff=$(BASE64_SOURCE_DIFF)" -o ./$@ $(PACKAGE)/cmd/$(CMD)
+
 $(BUILD_DIR)/darwin-arm64/$(CMD): $(BUILD_DIR)/darwin-arm64 $(SRC)
 	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-X $(PACKAGE)/build.base64SourceDiff=$(BASE64_SOURCE_DIFF)" -o ./$@ $(PACKAGE)/cmd/$(CMD)
 
@@ -53,9 +70,6 @@ $(BUILD_DIR)/darwin-amd64/$(CMD): $(BUILD_DIR)/darwin-amd64 $(SRC)
 
 $(BUILD_DIR)/windows-amd64/$(CMD).exe: $(BUILD_DIR)/windows-amd64 $(SRC)
 	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X $(PACKAGE)/build.base64SourceDiff=$(BASE64_SOURCE_DIFF)" -o ./$@ -buildmode=exe $(PACKAGE)/cmd/$(CMD)
-
-$(BUILD_DIR)/linux-amd64/$(CMD): $(BUILD_DIR)/linux-amd64 $(SRC)
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X $(PACKAGE)/build.base64SourceDiff=$(BASE64_SOURCE_DIFF)" -o ./$@ $(PACKAGE)/cmd/$(CMD)
 
 .PHONY: release
 release: build

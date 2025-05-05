@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"bufio"
 	"fmt"
 	"net/http"
 	"os"
@@ -66,11 +67,13 @@ func Logger(h http.Handler) http.Handler {
 		data.RequestTime = startTime
 		data.ResponseDuration = elapsedTime
 
-		err := logTemplate.Execute(os.Stdout, data)
+		f := bufio.NewWriter(os.Stdout)
+		err := logTemplate.Execute(f, data)
 		if err != nil {
-			os.Stderr.Write([]byte(fmt.Sprintf("error writing log: %v\n", err)))
+			fmt.Fprintf(os.Stderr, "error writing log: %v\n", err)
 		}
-		os.Stdout.Write([]byte{'\n'})
+		f.Write([]byte{'\n'})
+		f.Flush()
 	}
 	return http.HandlerFunc(fn)
 }

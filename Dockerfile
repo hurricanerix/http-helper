@@ -1,9 +1,9 @@
 FROM golang:1.24.2-bookworm AS build
 WORKDIR /http-helper
 COPY . .
-RUN make bin/linux-amd64/hs
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 make bin/linux-amd64/hs
 
-FROM alpine
+FROM debian:stable-slim
 WORKDIR /
 RUN mkdir -p /data
 COPY --from=build /http-helper/bin/linux-amd64/hs /bin/hs
