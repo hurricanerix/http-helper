@@ -7,7 +7,7 @@ HOME_DIR=`echo $(HOME)`
 SRC=$(shell find . -type f -regex ".*\.go")
 BASE64_SOURCE_DIFF=$(shell git --no-pager diff | base64 -w0)
 COMMIT_HASH=$(shell git rev-parse HEAD)
-VERSION=$(shell git describe --exact-match --tags 2> /dev/null || echo "devbuild-$(COMMIT_HASH)")
+VERSION=$(shell git describe --exact-match --tags 2> /dev/null || echo "devbuild")
 
 .PHONY: default
 default: build
