@@ -19,9 +19,10 @@
 !CODEOWNERS
 
 !Dockerfile
+!docker-compose.yml
 !example.env
 
-!/.github/*
+!/.github/**
 !/docs/*
 !Makefile
 
