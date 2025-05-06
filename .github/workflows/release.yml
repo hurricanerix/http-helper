@@ -1,6 +1,7 @@
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - '*'
 
 permissions:
   contents: write
@@ -10,6 +11,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: build
+        run: make build
+      - name: version
+        run: echo "::set-output name=version::$(./bin/linux-amd64/hs -version)"
+        id: version
+      - name: release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: false
+          prerelease: false
+          release_name: ${{ steps.version.outputs.version }}
+          tag_name: ${{ github.ref }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: checkout repo
         uses: actions/checkout@v4
       - name: build release
