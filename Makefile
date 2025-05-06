@@ -9,9 +9,6 @@ BASE64_SOURCE_DIFF=$(shell git --no-pager diff | base64 -w0)
 COMMIT_HASH=$(shell git rev-parse HEAD)
 VERSION_TAG=$(shell git describe --exact-match --tags || echo "devbuild-$(COMMIT_HASH)")
 
-foo:
-	echo $(COMMIT_HASH)
-
 .PHONY: default
 default: build
 
