@@ -31,17 +31,18 @@ const defaultServerReadTimeout = 5 * time.Second
 const defaultServerWriteTimeout = 5 * time.Second
 
 func main() {
-	address := flag.String("bind", "127.0.0.1", "bind to this address")
-	port := flag.Int("port", 8000, "bind to this port")
-	directory := flag.String("d", ".", "serve this directory")
-	showDiff := flag.Bool("diff", false, "display the changes made at compile time, suitable for patching.")
+	address := flag.String("bind", "127.0.0.1", "Bind to this address.")
+	port := flag.Int("port", 8000, "Bind to this port.")
+	directory := flag.String("d", ".", "Serve this directory.")
+	showDiff := flag.Bool("diff", false, "Display the changes made at compile time, suitable for patching.")
+	showVersion := flag.Bool("version", false, "Display the version and exit.")
 
 	flag.Usage = func() {
 		fmt.Printf("Usage: %s [FLAGS]\n", os.Args[0])
 		fmt.Println("")
 		fmt.Println("Build Info:")
 		fmt.Println("  Built with:", build.GoVersion())
-		fmt.Printf("  Commit Hash: %s", build.CommitHash())
+		fmt.Printf("  Version: %s", build.CommitHash())
 		if build.SourceModified() {
 			fmt.Printf(" (modified)")
 		}
@@ -57,6 +58,11 @@ func main() {
 
 	if *showDiff {
 		fmt.Println(build.SourceDiff())
+		return
+	}
+
+	if *showVersion {
+		fmt.Println(build.CommitHash())
 		return
 	}
 
@@ -141,9 +147,6 @@ func getStage(stageName string) stage {
 }
 
 func loadEnv() {
-	// TODO: 1. Try loading from: ./.env
-	// TODO: 2. if #1 does not exist, try loading from ~/.config/http_helper.env
-	// TODO: 3. if #2 does not exist, load using app defaults.
 	if err := godotenv.Load(".env"); err == nil {
 		return
 	}
@@ -154,7 +157,5 @@ func loadEnv() {
 	}
 
 	globalConfig := path.Join(homeDir, ".config/http_helper.env")
-	if err := godotenv.Load(globalConfig); err == nil {
-		return
-	}
+	godotenv.Load(globalConfig)
 }
