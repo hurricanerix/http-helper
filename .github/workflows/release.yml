@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: build
-        run: make build
+        run: make
       - name: version
         run: echo "::set-output name=version::$(./bin/linux-amd64/hs -version)"
         id: version
