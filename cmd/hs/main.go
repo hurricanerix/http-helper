@@ -42,7 +42,8 @@ func main() {
 		fmt.Println("")
 		fmt.Println("Build Info:")
 		fmt.Println("  Built with:", build.GoVersion())
-		fmt.Printf("  Version: %s", build.CommitHash())
+		fmt.Println("  Version:", build.AppVersion())
+		fmt.Printf("  Commit Hash: %s", build.CommitHash())
 		if build.SourceModified() {
 			fmt.Printf(" (modified)")
 		}
@@ -62,7 +63,7 @@ func main() {
 	}
 
 	if *showVersion {
-		fmt.Println(build.CommitHash())
+		fmt.Println(build.AppVersion())
 		return
 	}
 

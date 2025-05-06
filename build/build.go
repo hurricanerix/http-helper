@@ -6,11 +6,13 @@ package build
 
 import (
 	"encoding/base64"
+	"fmt"
 	"runtime"
 	"runtime/debug"
 	"strings"
 )
 
+var version string
 var base64SourceDiff string
 
 const infoUnknownMsg = "unknown"
@@ -18,6 +20,14 @@ const infoUnknownMsg = "unknown"
 // GoVersion used to build the app.
 func GoVersion() string {
 	return runtime.Version()
+}
+
+// AppVersion
+func AppVersion() string {
+	if version == "" {
+		return fmt.Sprintf("devbuild-%s", CommitHash())
+	}
+	return version
 }
 
 // CommitHash used to build the app.

@@ -7,6 +7,7 @@ HOME_DIR=`echo $(HOME)`
 
 SRC=$(shell find . -type f -regex ".*\.go")
 BASE64_SOURCE_DIFF=$(shell git --no-pager diff | base64 -w0)
+VERSION_TAG=$(shell git describe --exact-match --tags || echo "")
 
 .PHONY: default
 default: build
@@ -38,7 +39,6 @@ fuzz:
 
 .PHONY: build
 build: $(BUILD_DIR) $(BUILD_DIR)/$(PLATFORM)/$(CMD)
-	echo $(PLATFORM)
 
 .PHONY: build-all
 build-all: $(BUILD_DIR) $(BUILD_DIR)/darwin-arm64/$(CMD) $(BUILD_DIR)/darwin-amd64/$(CMD) $(BUILD_DIR)/windows-amd64/$(CMD).exe $(BUILD_DIR)/linux-amd64/$(CMD)
@@ -60,16 +60,16 @@ $(BUILD_DIR)/linux-amd64:
 	mkdir -p $(BUILD_DIR)/linux-amd64
 
 $(BUILD_DIR)/linux-amd64/$(CMD): $(BUILD_DIR)/linux-amd64 $(SRC)
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X $(PACKAGE)/build.base64SourceDiff=$(BASE64_SOURCE_DIFF)" -o ./$@ $(PACKAGE)/cmd/$(CMD)
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X $(PACKAGE)/build.base64SourceDiff=$(BASE64_SOURCE_DIFF) -X $(PACKAGE)/build.version=$(VERSION_TAG)" -o ./$@ $(PACKAGE)/cmd/$(CMD)
 
 $(BUILD_DIR)/darwin-arm64/$(CMD): $(BUILD_DIR)/darwin-arm64 $(SRC)
-	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-X $(PACKAGE)/build.base64SourceDiff=$(BASE64_SOURCE_DIFF)" -o ./$@ $(PACKAGE)/cmd/$(CMD)
+	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-X $(PACKAGE)/build.base64SourceDiff=$(BASE64_SOURCE_DIFF) -X $(PACKAGE)/build.version=$(VERSION_TAG)"" -o ./$@ $(PACKAGE)/cmd/$(CMD)
 
 $(BUILD_DIR)/darwin-amd64/$(CMD): $(BUILD_DIR)/darwin-amd64 $(SRC)
-	GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X $(PACKAGE)/build.base64SourceDiff=$(BASE64_SOURCE_DIFF)" -o ./$@ $(PACKAGE)/cmd/$(CMD)
+	GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X $(PACKAGE)/build.base64SourceDiff=$(BASE64_SOURCE_DIFF) -X $(PACKAGE)/build.version=$(VERSION_TAG)"" -o ./$@ $(PACKAGE)/cmd/$(CMD)
 
 $(BUILD_DIR)/windows-amd64/$(CMD).exe: $(BUILD_DIR)/windows-amd64 $(SRC)
-	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X $(PACKAGE)/build.base64SourceDiff=$(BASE64_SOURCE_DIFF)" -o ./$@ -buildmode=exe $(PACKAGE)/cmd/$(CMD)
+	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X $(PACKAGE)/build.base64SourceDiff=$(BASE64_SOURCE_DIFF) -X $(PACKAGE)/build.version=$(VERSION_TAG)"" -o ./$@ -buildmode=exe $(PACKAGE)/cmd/$(CMD)
 
 .PHONY: release
 release: build
