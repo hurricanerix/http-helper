@@ -73,14 +73,14 @@ $(BUILD_DIR)/windows-amd64/$(CMD).exe: $(BUILD_DIR)/windows-amd64 $(SRC)
 
 .PHONY: release
 release: all
-	@tar czf "$(BUILD_DIR)/$(CMD)-linux-amd64-$(VERSION).tar.gz" --directory="$(BUILD_DIR)/linux-amd64" "$(CMD)"
-	@cd $(BUILD_DIR); shasum -a 256  "$(CMD)-linux-amd64-$(VERSION).tar.gz"
-	@zip -q -r -j "$(BUILD_DIR)/$(CMD)-windows-amd64-$(VERSION).zip" "$(BUILD_DIR)/windows-amd64/$(CMD).exe"
-	@cd $(BUILD_DIR); shasum -a 256 "$(CMD)-windows-amd64-$(VERSION).zip"
-	@tar czf "$(BUILD_DIR)/$(CMD)-darwin-amd64-$(VERSION).tar.gz" --directory="$(BUILD_DIR)/darwin-amd64" "$(CMD)"
-	@cd $(BUILD_DIR); shasum -a 256 "$(CMD)-darwin-amd64-$(VERSION).tar.gz"
-	@tar czf "$(BUILD_DIR)/$(CMD)-darwin-arm64-$(VERSION).tar.gz" --directory="$(BUILD_DIR)/darwin-arm64" "$(CMD)"
-	@cd $(BUILD_DIR); shasum -a 256 "$(CMD)-darwin-arm64-$(VERSION).tar.gz"
+	@tar czf "$(BUILD_DIR)/$(CMD).linux-amd64.tar.gz" --directory="$(BUILD_DIR)/linux-amd64" "$(CMD)"
+	@cd $(BUILD_DIR); shasum -a 256  "$(CMD).linux-amd64.tar.gz"
+	@zip -q -r -j "$(BUILD_DIR)/$(CMD).windows-amd64.zip" "$(BUILD_DIR)/windows-amd64/$(CMD).exe"
+	@cd $(BUILD_DIR); shasum -a 256 "$(CMD).windows-amd64.zip"
+	@tar czf "$(BUILD_DIR)/$(CMD).darwin-amd64.tar.gz" --directory="$(BUILD_DIR)/darwin-amd64" "$(CMD)"
+	@cd $(BUILD_DIR); shasum -a 256 "$(CMD).darwin-amd64.tar.gz"
+	@tar czf "$(BUILD_DIR)/$(CMD).darwin-arm64.tar.gz" --directory="$(BUILD_DIR)/darwin-arm64" "$(CMD)"
+	@cd $(BUILD_DIR); shasum -a 256 "$(CMD).darwin-arm64.tar.gz"
 
 .PHONY: clean
 clean: 

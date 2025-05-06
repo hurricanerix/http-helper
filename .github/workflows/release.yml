@@ -1,5 +1,3 @@
-# .github/workflows/release.yaml
-
 on:
   release:
     types: [created]
@@ -9,24 +7,46 @@ permissions:
   packages: write
 
 jobs:
-  releases-matrix:
-    name: Release Go Binary
+  build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        goos: [linux, windows, darwin]
-        goarch: [amd64, arm64]
-        exclude:
-          - goarch: arm64
-            goos: windows
     steps:
-      - uses: actions/checkout@v4
-      - uses: wangyoucao577/go-release-action@v1
+      - name: checkout repo
+        uses: actions/checkout@v4
+      - name: build release
+        run: make release
+      - name: upload linux amd64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          goos: ${{ matrix.goos }}
-          goarch: ${{ matrix.goarch }}
-          goversion: "1.24.*"
-          project_path: "./cmd/test-binary"
-          binary_name: "test-binary"
-          extra_files: LICENSE README.md
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/hs.linux-amd64.tar.gz
+          asset_name: hs.linux-amd64.tar.gz
+          asset_content_type: application/gzip
+      - name: upload darwin arm64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/hs.darwin-arm64.tar.gz
+          asset_name: hs.darwin-arm64.tar.gz
+          asset_content_type: application/gzip
+      - name: upload darwin amd64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/hs.darwin-amd64.tar.gz
+          asset_name: hs.darwin-amd64.tar.gz
+          asset_content_type: application/gzip
+      - name: upload windows amd64 artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/hs.windows-amd64.zip
+          asset_name: hs.windows-amd64.zip
+          asset_content_type: application/zip
