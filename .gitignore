@@ -16,10 +16,13 @@
 
 !README.md
 !LICENSE
+!CODEOWNERS
 
 !Dockerfile
 !example.env
 
+!/.github/*
+!/docs/*
 !Makefile
 
 !testdata/*

@@ -19,3 +19,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Unless otherwise noted, all source code in this repo falls under the above MIT License.
+
+`testdata/images/gopher.png` was created by Renee French and uses a Creative Commons Attribution 4.0 licensed License.
+`testdata/hello.go` was taken from the [Go Playground](https://go.dev/play/), and probably is copyright 2009 The Go Authors.
+`testdata/WaterBottle.glb` was taken from [glTF Sample](https://github.com/KhronosGroup/glTF-Sample-Models/tree/main/2.0/WaterBottle) and uses a CC0 License.
