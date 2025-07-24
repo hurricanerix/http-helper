@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 )
@@ -45,7 +46,16 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	io.ReadAll(r.Body)
 
 	p := strings.TrimRight(r.URL.Path, "/")
-	target := path.Join(h.Directory, p) // TODO: ABS?
+	target, err := filepath.Abs(path.Join(h.Directory, p))
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if !strings.HasPrefix(target, h.Directory) {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
 
 	info, err := os.Stat(target)
 	if err != nil {
