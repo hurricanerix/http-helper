@@ -1,25 +1,14 @@
 package middleware
 
 import (
-	"bufio"
-	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
-	"text/template"
 	"time"
 )
 
-var logTemplate *template.Template
-
-const loggingTemplateSrc = `{{.RequestTime.Format "2006-01-02T15:04:05-07:00"}} {{.RequestID}} {{.RequestMethod}} {{.RequestPath}} {{tokenWhenEmpty .ResponseStatusCode}} {{tokenWhenEmpty .ResponseContentLength}} {{.ResponseDuration}}`
-
-func init() {
-	funcMap := template.FuncMap{
-		"tokenWhenEmpty": tokenWhenEmpty,
-	}
-	logTemplate = template.Must(template.New("logger").Funcs(funcMap).Parse(loggingTemplateSrc))
-}
+var logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 type LogParams struct {
 	// Common Log Format
@@ -67,20 +56,17 @@ func Logger(h http.Handler) http.Handler {
 		data.RequestTime = startTime
 		data.ResponseDuration = elapsedTime
 
-		f := bufio.NewWriter(os.Stdout)
-		err := logTemplate.Execute(f, data)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error writing log: %v\n", err)
-		}
-		f.Write([]byte{'\n'})
-		f.Flush()
+		logger.Info("request",
+			"time", data.RequestTime,
+			"request_id", data.RequestID,
+			"method", data.RequestMethod,
+			"path", data.RequestPath,
+			"status", data.ResponseStatusCode,
+			"bytes", data.ResponseContentLength,
+			"duration", data.ResponseDuration,
+			"content_type", data.ResponseContentType,
+			"etag", data.ResponseETag,
+		)
 	}
 	return http.HandlerFunc(fn)
-}
-
-func tokenWhenEmpty(value string) string {
-	if value == "" {
-		return "-"
-	}
-	return value
 }

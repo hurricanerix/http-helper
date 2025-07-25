@@ -28,16 +28,20 @@ func TestHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wwwDir := path.Join(parentDir, "www")
-	if err := os.Mkdir(wwwDir, 0755); err != nil {
+	absoluteWWWDir := path.Join(parentDir, "www")
+	if err := os.Mkdir(absoluteWWWDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	legitimateFile := filepath.Join(wwwDir, "allowed.txt")
+	legitimateFile := filepath.Join(absoluteWWWDir, "allowed.txt")
 	if err := os.WriteFile(legitimateFile, []byte("allowed content"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	handler := Handler{Directory: wwwDir}
+	absoluteWWWDir, err := filepath.Abs(absoluteWWWDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := Handler{Directory: absoluteWWWDir}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {

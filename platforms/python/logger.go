@@ -1,14 +1,12 @@
 package python
 
 import (
-	"bufio"
-	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/hurricanerix/http-helper/middleware"
@@ -16,16 +14,10 @@ import (
 
 var timeNow = time.Now
 var stdout = io.Writer(os.Stdout)
-
-var logTemplate *template.Template
-
-const loggingTemplateSrc = `{{.RemoteHost}} - - [{{.RequestTime.Format "02/Jan/2006 15:04:05"}}] "{{.RequestMethod}} {{.RequestPath}} {{.RequestProto}}" {{tokenWhenEmpty .ResponseStatusCode}} -`
+var logger *slog.Logger
 
 func init() {
-	funcMap := template.FuncMap{
-		"tokenWhenEmpty": tokenWhenEmpty,
-	}
-	logTemplate = template.Must(template.New("logger").Funcs(funcMap).Parse(loggingTemplateSrc))
+	logger = slog.New(slog.NewTextHandler(stdout, nil))
 }
 
 type logParams struct {
@@ -57,20 +49,14 @@ func Logger(next http.Handler) http.Handler {
 		data.RequestMethod = r.Method
 		data.RequestTime = startTime
 
-		f := bufio.NewWriter(stdout)
-		err := logTemplate.Execute(f, data)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error writing log: %v\n", err)
-		}
-		f.Write([]byte{'\n'})
-		f.Flush()
+		logger.Info("python_request",
+			"remote_host", data.RemoteHost,
+			"time", data.RequestTime,
+			"method", data.RequestMethod,
+			"path", data.RequestPath,
+			"proto", data.RequestProto,
+			"status", data.ResponseStatusCode,
+		)
 	}
 	return http.HandlerFunc(fn)
-}
-
-func tokenWhenEmpty(value string) string {
-	if value == "" {
-		return "-"
-	}
-	return value
 }
