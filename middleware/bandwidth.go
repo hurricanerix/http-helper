@@ -3,6 +3,7 @@ package middleware
 import (
 	"bytes"
 	"io"
+	"log/slog"
 	"math/rand"
 	"net/http"
 	"time"
@@ -24,7 +25,8 @@ func Bandwidth(h http.Handler) http.Handler {
 		if mbps < 0 {
 			_, err := io.Copy(rw, brw.ResponseBuffer)
 			if err != nil {
-				panic(err)
+				slog.Error("Failed to copy response", "error", err)
+				http.Error(rw, "Internal Server Error", http.StatusInternalServerError)
 			}
 			return
 		}
@@ -35,7 +37,8 @@ func Bandwidth(h http.Handler) http.Handler {
 		limitedReader := flowrate.NewReader(brw.ResponseBuffer, int64(mbps+adjustedJitter))
 		_, err := io.Copy(rw, limitedReader)
 		if err != nil {
-			panic(err)
+			slog.Error("Failed to copy limited response", "error", err)
+			http.Error(rw, "Internal Server Error", http.StatusInternalServerError)
 		}
 	}
 	return http.HandlerFunc(fn)

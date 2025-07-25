@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path"
@@ -69,7 +69,8 @@ func main() {
 
 	directoryAbsolutePath, err := filepath.Abs(*directory)
 	if err != nil {
-		panic(err)
+		slog.Error("Failed to get absolute path", "directory", *directory, "error", err)
+		os.Exit(1)
 	}
 
 	p := getPipeline(config.StringEnv("HH_SERVER_PIPELINE", defaultServerPipeline))
@@ -82,8 +83,11 @@ func main() {
 		WriteTimeout: config.DurationEnv("HH_SERVER_WRITE_TIMEOUT", defaultServerWriteTimeout),
 	}
 
-	fmt.Printf("Serving HTTP on %s port %d (http://%s/)\n", *address, *port, s.Addr)
-	log.Fatal(s.ListenAndServe())
+	slog.Info("Serving HTTP", "address", *address, "port", *port, "url", fmt.Sprintf("http://%s/", s.Addr))
+	if err := s.ListenAndServe(); err != nil {
+		slog.Error("Server failed", "error", err)
+		os.Exit(1)
+	}
 }
 
 type pipeline []stage
@@ -154,7 +158,8 @@ func loadEnv() {
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Failed to get user home directory", "error", err)
+		os.Exit(1)
 	}
 
 	globalConfig := path.Join(homeDir, ".config/http_helper.env")

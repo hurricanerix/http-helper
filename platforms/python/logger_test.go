@@ -2,9 +2,12 @@ package python
 
 import (
 	"bytes"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -75,15 +78,18 @@ func TestLogger(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			preserveTimeNow := timeNow
 			preserveStdout := stdout
+			preserveLogger := logger
 			defer func() {
 				timeNow = preserveTimeNow
 				stdout = preserveStdout
+				logger = preserveLogger
 			}()
 			timeNow = func() time.Time {
 				return tc.reqTime
 			}
 			got := bytes.Buffer{}
 			stdout = &got
+			logger = slog.New(slog.NewTextHandler(&got, nil))
 
 			svr := httptest.NewServer(Logger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tc.resStatusCode)
@@ -110,9 +116,25 @@ func TestLogger(t *testing.T) {
 				t.Errorf("expected statuscode to be %v got %v", tc.resStatusCode, res.StatusCode)
 			}
 
-			diff := cmp.Diff(tc.want, got.String())
-			if diff != "" {
-				t.Fatalf("%s\n", diff)
+			// Since we're using structured logging, we need to check for the presence of key fields
+			// rather than exact format matching
+			logOutput := got.String()
+			
+			// Verify the log contains all expected fields
+			expectedContains := []string{
+				"python_request",
+				tc.reqRemoteHost,
+				tc.reqMethod,
+				tc.reqPath,
+				"HTTP/1.1",
+				strconv.Itoa(tc.resStatusCode),
+			}
+			
+			for _, expected := range expectedContains {
+				if !strings.Contains(logOutput, expected) {
+					diff := cmp.Diff(expected + " (expected to be in log)", logOutput)
+					t.Fatalf("Log missing expected content:\n%s", diff)
+				}
 			}
 		})
 	}

@@ -2,8 +2,8 @@ package python
 
 import (
 	"bytes"
-	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path"
@@ -34,7 +34,8 @@ func init() {
 	var err error
 	listingTemplate, err = template.New("directoryListing").Parse(directoryListingTemplateSrc)
 	if err != nil {
-		panic(err)
+		slog.Error("Failed to parse directory listing template", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -115,7 +116,7 @@ func (h Handler) serveListing(target string, w http.ResponseWriter, r *http.Requ
 
 	err = listingTemplate.Execute(payload, data)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: failed to execute template: %v\n", err)
+		slog.Error("Failed to execute template", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
